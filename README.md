@@ -1,6 +1,10 @@
-# Lokalise .resx Synchronization Script
+# Lokalise .resx Synchronization Scripts
 
-A lightweight PowerShell wrapper script for uploading .NET `.resx` resource files to Lokalise and downloading translated locale-specific files.
+Lightweight scripts for uploading .NET `.resx` resource files to Lokalise and downloading translated locale-specific files.
+
+**Available in two versions:**
+- **PowerShell** (`lokalise-resx.ps1`) - For Windows/.NET environments
+- **Node.js** (`lokalise-resx.js`) - Cross-platform, no external dependencies
 
 ## Features
 
@@ -12,85 +16,144 @@ A lightweight PowerShell wrapper script for uploading .NET `.resx` resource file
 - Dry run mode for safe testing
 - Detailed logging with verbose option
 
+---
+
 ## Quick Start
 
-### 1. Configure the Script
+### PowerShell Version
 
-Open `lokalise-resx.ps1` and set the following constants near the top of the file:
-
+**1. Configure:**
 ```powershell
-# HARDCODED API TOKEN - Replace with your Lokalise API token
-$script:DEFAULT_API_TOKEN = "YOUR_LOKALISE_API_TOKEN_HERE"
-
-# DEFAULT TARGET LOCALES - Modify this list as needed
-$script:DEFAULT_LOCALES = @(
-    "fr-CA",
-    "es-MX",
-    "de-DE",
-    "ja-JP",
-    "zh-Hans"
-)
+# Edit lokalise-resx.ps1 and set:
+$script:DEFAULT_API_TOKEN = "your-api-token"
 ```
 
-### 2. Run the Script
-
+**2. Run:**
 ```powershell
-# Basic usage (requires ProjectId)
-.\lokalise-resx.ps1 -ProjectId "your-project-id-here"
-
-# With custom locales
-.\lokalise-resx.ps1 -ProjectId "abc123.456" -Locales @("fr-CA", "es-MX")
-
-# Dry run (no API calls or file writes)
-.\lokalise-resx.ps1 -ProjectId "abc123.456" -DryRun
-
-# Verbose logging
-.\lokalise-resx.ps1 -ProjectId "abc123.456" -VerboseLogging
+.\lokalise-resx.ps1 -ProjectId "abc123.456"
 ```
+
+### Node.js Version
+
+**1. Configure:**
+```javascript
+// Edit lokalise-resx.js and set:
+const DEFAULT_API_TOKEN = 'your-api-token';
+```
+
+**2. Run:**
+```bash
+node lokalise-resx.js --project-id abc123.456
+```
+
+---
 
 ## Configuration
 
 ### API Token
 
-The API token can be configured in two ways:
+Get your API token from: **Lokalise Dashboard > Settings > API Tokens**
 
-1. **Hardcoded (recommended for automation):** Edit the `$script:DEFAULT_API_TOKEN` constant in the script
-2. **Parameter override:** Use the `-ApiToken` parameter when running the script
-
-Get your API token from: Lokalise Dashboard > Settings > API Tokens
+Configure in two ways:
+1. **Hardcoded:** Edit the constant in the script (recommended for automation)
+2. **Parameter:** Pass at runtime (see parameter reference below)
 
 ### Project ID
 
-The Lokalise Project ID is required and can be found in your project settings. It's in hash format (e.g., `abc123def.456789`).
+The Lokalise Project ID is required. Find it in your project settings (hash format, e.g., `abc123def.456789`).
 
-### Default Locale List
+### Default Locales
 
-The `$script:DEFAULT_LOCALES` array defines which locales to translate to by default. Modify this list to match your project needs:
+Both scripts include a default locale list. Modify in the script:
 
+**PowerShell:**
 ```powershell
-$script:DEFAULT_LOCALES = @(
-    "fr-CA",      # French (Canada)
-    "es-MX",      # Spanish (Mexico)
-    "de-DE",      # German (Germany)
-    "ja-JP",      # Japanese
-    "zh-Hans"     # Chinese (Simplified)
-)
+$script:DEFAULT_LOCALES = @("fr-CA", "es-MX", "de-DE", "ja-JP", "zh-Hans")
 ```
 
-Override at runtime with `-Locales @("locale1", "locale2")`.
+**Node.js:**
+```javascript
+const DEFAULT_LOCALES = ['fr-CA', 'es-MX', 'de-DE', 'ja-JP', 'zh-Hans'];
+```
+
+---
+
+## Parameter Reference
+
+### PowerShell
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `-ProjectId` | string | **Yes** | - | Lokalise project ID |
+| `-ApiToken` | string | No | Constant | API token override |
+| `-RootPath` | string | No | Current dir | Directory to scan |
+| `-Locales` | string[] | No | Default list | Target locales |
+| `-TimeoutMinutes` | int | No | 10 | Export timeout |
+| `-DryRun` | switch | No | false | Simulate only |
+| `-VerboseLogging` | switch | No | false | Detailed output |
+
+### Node.js
+
+| Parameter | Short | Required | Default | Description |
+|-----------|-------|----------|---------|-------------|
+| `--project-id` | `-p` | **Yes** | - | Lokalise project ID |
+| `--api-token` | `-t` | No | Constant | API token override |
+| `--root-path` | `-r` | No | Current dir | Directory to scan |
+| `--locales` | `-l` | No | Default list | Comma-separated locales |
+| `--timeout` | - | No | 10 | Export timeout (minutes) |
+| `--dry-run` | `-d` | No | false | Simulate only |
+| `--verbose` | `-v` | No | false | Detailed output |
+
+---
+
+## Usage Examples
+
+### PowerShell
+
+```powershell
+# Basic usage
+.\lokalise-resx.ps1 -ProjectId "abc123.456"
+
+# Custom locales
+.\lokalise-resx.ps1 -ProjectId "abc123.456" -Locales @("fr-CA", "es-MX")
+
+# Dry run with verbose output
+.\lokalise-resx.ps1 -ProjectId "abc123.456" -DryRun -VerboseLogging
+
+# CI/CD with environment variables
+.\lokalise-resx.ps1 -ProjectId $env:LOKALISE_PROJECT_ID -ApiToken $env:LOKALISE_API_TOKEN
+```
+
+### Node.js
+
+```bash
+# Basic usage
+node lokalise-resx.js --project-id abc123.456
+
+# Custom locales
+node lokalise-resx.js -p abc123.456 -l fr-CA,es-MX
+
+# Dry run with verbose output
+node lokalise-resx.js -p abc123.456 --dry-run --verbose
+
+# CI/CD with environment variables
+node lokalise-resx.js -p $LOKALISE_PROJECT_ID -t $LOKALISE_API_TOKEN
+```
+
+---
 
 ## Locale Validation
 
-Before uploading or exporting, the script:
+Before uploading or exporting, both scripts:
 
-1. Queries the Lokalise project's configured languages
-2. Validates all requested locales exist in the project
+1. Query the Lokalise project's configured languages
+2. Validate all requested locales exist in the project
 3. If ANY locale is invalid:
-   - Stops execution immediately
-   - Displays invalid locale(s)
-   - Lists all supported locales from the project
+   - Stop execution immediately
+   - Display invalid locale(s)
+   - List all supported locales from the project
 
-This prevents wasted API calls and ensures translations exist for requested locales.
+---
 
 ## Machine Translation Behavior
 
@@ -103,92 +166,41 @@ This prevents wasted API calls and ensures translations exist for requested loca
 
 MT failures are logged as warnings but don't stop execution.
 
+---
+
 ## File Discovery Rules
 
 ### Neutral Files (uploaded)
-Files matching: `*.resx` WITHOUT a locale suffix
 
-Examples:
-- `Strings.resx` ✓ (neutral)
-- `Resources.resx` ✓ (neutral)
-- `Labels.resx` ✓ (neutral)
+Files matching `*.resx` WITHOUT a locale suffix:
+- `Strings.resx` - uploaded
+- `Resources.resx` - uploaded
 
-### Locale-Specific Files (excluded from upload)
-Files matching: `*.<locale>.resx`
+### Locale-Specific Files (excluded)
 
-Locale patterns detected:
-- Two-letter code: `*.en.resx`, `*.fr.resx`
-- Two-letter + region: `*.en-US.resx`, `*.fr-CA.resx`
-- Script variants: `*.zh-Hant.resx`, `*.zh-Hans.resx`
-
-Examples:
-- `Strings.fr-CA.resx` ✗ (locale-specific)
-- `Resources.ja.resx` ✗ (locale-specific)
+Files matching `*.<locale>.resx`:
+- `Strings.fr-CA.resx` - skipped
+- `Resources.en.resx` - skipped
 
 ### Excluded Folders
-The following directories are always skipped:
-- `.git`
-- `bin`
-- `obj`
-- `packages`
 
-### Output Naming Convention
-Translated files are saved alongside neutral files:
+- `.git`, `bin`, `obj`, `packages`, `node_modules`
+
+### Output Naming
+
 ```
 /Project
   /Resources
     Strings.resx          (neutral - uploaded)
-    Strings.fr-CA.resx    (generated)
-    Strings.es-MX.resx    (generated)
+    Strings.fr-CA.resx    (downloaded)
+    Strings.es-MX.resx    (downloaded)
 ```
 
-## Example Usage Scenarios
-
-### Scenario 1: Initial Setup
-First-time synchronization with all default locales:
-```powershell
-.\lokalise-resx.ps1 -ProjectId "abc123.456" -VerboseLogging
-```
-
-### Scenario 2: CI/CD Pipeline
-Automated sync with specific locales and custom token:
-```powershell
-.\lokalise-resx.ps1 `
-    -ProjectId $env:LOKALISE_PROJECT_ID `
-    -ApiToken $env:LOKALISE_API_TOKEN `
-    -Locales @("fr-CA", "es-MX") `
-    -TimeoutMinutes 15
-```
-
-### Scenario 3: Preview Changes
-Check what would happen without making changes:
-```powershell
-.\lokalise-resx.ps1 -ProjectId "abc123.456" -DryRun -VerboseLogging
-```
-
-### Scenario 4: Different Repository Root
-Sync files from a specific directory:
-```powershell
-.\lokalise-resx.ps1 `
-    -ProjectId "abc123.456" `
-    -RootPath "C:\Projects\MyApp\src"
-```
-
-## Parameter Reference
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `-RootPath` | string | No | Current directory | Root directory to scan for .resx files |
-| `-ProjectId` | string | **Yes** | - | Lokalise project ID (hash format) |
-| `-ApiToken` | string | No | Hardcoded constant | Lokalise API token (overrides constant) |
-| `-Locales` | string[] | No | `$DEFAULT_LOCALES` | Target locales to translate |
-| `-TimeoutMinutes` | int | No | 10 | Max wait time per locale export |
-| `-DryRun` | switch | No | false | Simulate without API calls or writes |
-| `-VerboseLogging` | switch | No | false | Enable detailed debug output |
+---
 
 ## Output Summary
 
-At completion, the script displays:
+Both scripts display a summary on completion:
 
 ```
 ============================================================
@@ -205,6 +217,8 @@ At completion, the script displays:
 ============================================================
 ```
 
+---
+
 ## Exit Codes
 
 | Code | Meaning |
@@ -212,27 +226,40 @@ At completion, the script displays:
 | 0 | Success |
 | 1 | Failure (invalid locales, API errors, or file errors) |
 
+---
+
 ## Requirements
 
+### PowerShell Version
 - PowerShell 7.0 or later
-- No external dependencies (uses built-in .NET classes)
+- No external dependencies
+
+### Node.js Version
+- Node.js 14.0 or later
+- No external dependencies (uses built-in modules only)
+
+### Both Versions
 - Valid Lokalise API token with read/write permissions
 - Lokalise project with target languages configured
+
+---
 
 ## Troubleshooting
 
 ### "Invalid locale(s) detected"
-The requested locale isn't configured in your Lokalise project. Add the language in Lokalise Dashboard > Project Settings > Languages.
+Add the language in Lokalise Dashboard > Project Settings > Languages.
 
 ### "API token not configured"
-Set the `$script:DEFAULT_API_TOKEN` constant or use the `-ApiToken` parameter.
+Set the token constant in the script or pass via parameter.
 
 ### "No neutral .resx files found"
-Ensure you're running from the correct directory or specify `-RootPath`. Check that files aren't in excluded folders (bin, obj, etc.).
+Check you're in the correct directory and files aren't in excluded folders.
 
 ### Rate Limiting
-The script uses exponential backoff (5s → 30s) when rate limited. For large projects, consider running during off-peak hours.
+Scripts use exponential backoff (5s to 30s). For large projects, run during off-peak hours.
+
+---
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License
