@@ -503,6 +503,35 @@ function Download-AndExtractBundle {
     }
 }
 
+function Test-ResxKeysComplete {
+    param(
+        [string]$NeutralFilePath,
+        [string]$LocalizedFilePath,
+        [string]$Locale
+    )
+
+    try {
+        $neutralXml = [xml](Get-Content -Path $NeutralFilePath -Raw)
+        $localizedXml = [xml](Get-Content -Path $LocalizedFilePath -Raw)
+
+        $neutralKeys = @($neutralXml.root.data | Where-Object { $_.name } | ForEach-Object { $_.name })
+        $localizedKeys = @($localizedXml.root.data | Where-Object { $_.name } | ForEach-Object { $_.name })
+
+        $missingKeys = $neutralKeys | Where-Object { $_ -notin $localizedKeys }
+
+        if ($missingKeys.Count -gt 0) {
+            Write-LogError -Message "Missing keys for locale $Locale: $($missingKeys -join ', ')" -Context "KeyCheck"
+            return $false
+        }
+
+        return $true
+    }
+    catch {
+        Write-LogError -Message "Failed to validate keys for locale $Locale`: $_" -Context "KeyCheck"
+        return $false
+    }
+}
+
 function Process-ExtractedFile {
     param(
         [System.IO.FileInfo]$ExtractedFile,
@@ -532,6 +561,11 @@ function Process-ExtractedFile {
 
     if (-not $matchingNeutral) {
         Write-Log -Message "No matching neutral file for: $relativeFromExtract" -Level "DEBUG"
+        return
+    }
+
+    if (-not (Test-ResxKeysComplete -NeutralFilePath $matchingNeutral.FullName -LocalizedFilePath $ExtractedFile.FullName -Locale $Locale)) {
+        Write-Log -Message "Skipping write for $($matchingNeutral.Name) in locale $Locale due to missing keys" -Level "WARN"
         return
     }
 
