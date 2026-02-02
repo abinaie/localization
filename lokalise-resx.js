@@ -491,6 +491,35 @@ function parseZipBuffer(buffer) {
     return files;
 }
 
+function extractResxKeys(xmlString) {
+    const keys = [];
+    const regex = /<data[^>]*name="([^"]+)"[^>]*>/g;
+    let match;
+    while ((match = regex.exec(xmlString)) !== null) {
+        keys.push(match[1]);
+    }
+    return keys;
+}
+
+function testResxKeysComplete(neutralPath, localizedBuffer, locale) {
+    try {
+        const neutralXml = fs.readFileSync(neutralPath, 'utf8');
+        const localizedXml = localizedBuffer.toString('utf8');
+        const neutralKeys = extractResxKeys(neutralXml);
+        const localizedKeys = extractResxKeys(localizedXml);
+        const missing = neutralKeys.filter(k => !localizedKeys.includes(k));
+
+        if (missing.length > 0) {
+            logError(`Missing keys for locale ${locale}: ${missing.join(', ')}`, 'KeyCheck');
+            return false;
+        }
+        return true;
+    } catch (e) {
+        logError(`Failed to validate keys for locale ${locale}: ${e.message}`, 'KeyCheck');
+        return false;
+    }
+}
+
 function processExtractedFile(filename, content, locale, rootPath, neutralFiles) {
     const normalizedFilename = filename.replace(/\\/g, '/');
 
@@ -508,6 +537,11 @@ function processExtractedFile(filename, content, locale, rootPath, neutralFiles)
 
     if (!matchingNeutral) {
         log(`No matching neutral file for: ${filename}`, 'DEBUG');
+        return;
+    }
+
+    if (!testResxKeysComplete(matchingNeutral, content, locale)) {
+        log(`Skipping write for ${path.basename(matchingNeutral)} in locale ${locale} due to missing keys`, 'WARN');
         return;
     }
 
