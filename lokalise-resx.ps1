@@ -484,13 +484,13 @@ function Download-AndExtractBundle {
         $extractedFiles = Get-ChildItem -Path $tempExtractPath -Filter "*.resx" -Recurse -File
 
         foreach ($extractedFile in $extractedFiles) {
-            Process-ExtractedFile -ExtractedFile $extractedFile -Locale $Locale -RootPath $RootPath -NeutralFiles $NeutralFiles -ExtractPath $tempExtractPath
+            Process-ExtractedFile -ExtractedFile $extractedFile -Locale ${Locale} -RootPath $RootPath -NeutralFiles $NeutralFiles -ExtractPath $tempExtractPath
         }
 
         $script:Stats.LocalesProcessed++
     }
     catch {
-        Write-LogError -Message "Failed to download/extract bundle for $Locale`: $_" -Context "Download"
+        Write-LogError -Message "Failed to download/extract bundle for ${Locale}: $_" -Context "Download"
     }
     finally {
         # Cleanup temp files
