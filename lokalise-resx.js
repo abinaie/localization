@@ -493,10 +493,17 @@ function parseZipBuffer(buffer) {
 
 function extractResxKeys(xmlString) {
     const keys = [];
-    const regex = /<data[^>]*name="([^"]+)"[^>]*>/g;
+    // Match <data ...> elements, handling multiline and various attribute orders
+    const dataElementRegex = /<data\s+([^>]*?)>/gs;
     let match;
-    while ((match = regex.exec(xmlString)) !== null) {
-        keys.push(match[1]);
+
+    while ((match = dataElementRegex.exec(xmlString)) !== null) {
+        const attributes = match[1];
+        // Extract name attribute - handle both quote styles and whitespace variations
+        const nameMatch = attributes.match(/name\s*=\s*["']([^"']+)["']/);
+        if (nameMatch) {
+            keys.push(nameMatch[1]);
+        }
     }
     return keys;
 }

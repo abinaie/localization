@@ -11,6 +11,7 @@ Lightweight scripts for uploading .NET `.resx` resource files to Lokalise and do
 - Recursive discovery of neutral `.resx` files
 - Automatic locale validation against Lokalise project
 - Machine translation for missing translations (preserves human translations)
+- **Key completeness validation** (prevents incomplete translations from being saved)
 - Exponential backoff polling for exports
 - Content-aware writes (only updates changed files)
 - Dry run mode for safe testing
@@ -168,6 +169,28 @@ MT failures are logged as warnings but don't stop execution.
 
 ---
 
+## Key Completeness Validation
+
+Before writing any localized file, both scripts validate that all keys from the neutral file exist in the translated file:
+
+1. Extract all `<data name="...">` keys from the neutral `.resx` file
+2. Extract all keys from the downloaded localized file
+3. Compare the key sets
+4. If any keys are missing:
+   - Log an error with the specific missing key names
+   - **Skip writing that localized file**
+   - Continue processing other files/locales
+
+This prevents incomplete translations from being saved to disk, which could cause runtime errors or display untranslated content.
+
+**Example log output:**
+```
+[ERROR] Missing keys for locale fr-CA: WelcomeMessage, ErrorTitle
+[WARN] Skipping write for Strings.resx in locale fr-CA due to missing keys
+```
+
+---
+
 ## File Discovery Rules
 
 ### Neutral Files (uploaded)
@@ -257,6 +280,14 @@ Check you're in the correct directory and files aren't in excluded folders.
 
 ### Rate Limiting
 Scripts use exponential backoff (5s to 30s). For large projects, run during off-peak hours.
+
+### "Missing keys for locale X"
+The localized file from Lokalise doesn't contain all keys from the neutral file. This can happen when:
+- New keys were just added and MT hasn't completed
+- Some keys were deleted in Lokalise
+- Export filters excluded certain keys
+
+Re-run the script after ensuring all keys are translated in Lokalise.
 
 ---
 
